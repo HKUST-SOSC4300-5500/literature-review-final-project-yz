@@ -12,7 +12,6 @@ headers = {
     'Accept-Encoding': 'gzip, deflate',
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7',
     'Connection': 'keep-alive',
-    'Cookie':'__reLoginUrl=""; cMACHINECOOKIE=17640461f10; __lsid=^t2ms1.wisers.com^365082109; cUSERNAME="HKUST@ipaccess"; __lst_libwisenews.wisers.net=1607374943524; __utma=53764021.642351175.1607396112.1607396112.1607396112.1; __utmc=53764021; __utmz=53764021.1607396112.1.1.utmcsr=libwisenews.wisers.net|utmccn=(referral)|utmcmd=referral|utmcct=/; JSESSIONID=C6E71AD5C7DFCBA0EB71FD2CD6BCDD65.wise19; __p_scid_HKUST_ipaccess="HKUST@ipaccess|365082109|6|t2ms1|61764058e17b"; __lst_libwisesearch.wisers.net=1607374943524; __utmt=1; __utmb=53764021.2.10.1607396112',
     'Host': 'libwisesearch.wisers.net',
     'Upgrade-Insecure-Requests': '1',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36'

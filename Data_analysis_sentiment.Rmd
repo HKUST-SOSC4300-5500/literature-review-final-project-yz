@@ -1,0 +1,171 @@
+---
+title: "Data_analysis"
+output: html_document
+---
+## Load Data
+```{r setup, include=FALSE}
+rm(list=ls())
+setwd('/Users/zhangyi/OneDrive - HKUST Connect/Courses/SOSC 5500/Final_Data')
+df = read.csv('data_with_senti.csv')
+media = read.csv('media_info_final.csv')
+feature = read.csv('features.csv')
+fea_add = read.csv('feature_add.csv')
+```
+
+## merge the data
+merge data from different sources. First, I merge news data with media info. Next, I merge the data with local features.
+
+```{r cars}
+colnames(df)[which(colnames(df)=='paper')] <- 'media'
+df1 = merge(df,media,by = "media",all.x = TRUE)
+colnames(df1)[which(colnames(df1)=='provincecheck_en')] <- 'province'
+colnames(df1)[which(colnames(df1)=='year.x')] <- 'year'
+df2 = merge(df1,feature,by = c("province","year"),all.x = TRUE)
+df2 = merge(df2,fea_add,by = c("province","year"),all.x = TRUE)
+rm(df,df1)
+```
+
+## Fit Logit Model
+```{r}
+library(sandwich)
+library(lmtest)
+model1 = glm(label~ factor(year)+factor(media),data = df2, family = "binomial")
+model1_robust = coeftest(model1, vcov. = vcovHC(model1, type="HC0", cluster="media", adjust=T))
+model1_robust
+
+coeff_model1 = c(model1_robust[2:17,1])
+ste_model1 =  c(model1_robust[2:17,2])
+year = seq(2004,2019,1)
+df_model1 = data.frame(year,coeff_model1,ste_model1)
+
+graph1 = ggplot(df_model1) + aes(x = year,y = coeff_model1,ymin = coeff_model1 - 2.576*ste_model1, ymax = coeff_model1 + 2.576*ste_model1)+ geom_pointrange() + 
+  ylab("Coefficients of Year (with 99% Confidence Interval)") + 
+  xlab("Year") + 
+  scale_x_continuous(breaks=seq(2004,2019,1)) +
+  geom_hline(aes(yintercept=0), colour="red")
+
+
+model2 = glm(label~ factor(year)+factor(party)*factor(year)+factor(media) ,data = df2, family = "binomial")
+model2_robust = coeftest(model2, vcov. = vcovHC(model2, type="HC0", cluster="media", adjust=T))
+model2_robust
+coeff_model2 = c(model2_robust[201:216,1])
+ste_model2 =  c(model2_robust[201:216,2])
+df_model2 = data.frame(year,coeff_model2,ste_model2)
+
+graph2 = ggplot(df_model2) + aes(x = year,y = coeff_model2,ymin = coeff_model2 - 2.576*ste_model2, ymax = coeff_model2 + 2.576*ste_model2)+ geom_pointrange() + 
+  ylab("Coefficients of Interaction (with 99% Confidence Interval)") + 
+  xlab("Year") + 
+  scale_x_continuous(breaks=seq(2004,2019,1))+
+  geom_hline(aes(yintercept=0), colour="red") 
+
+
+```
+
+## Heatplot for regions
+```{r}
+senti_province_year = aggregate(df2$label, by=list(df2$province,df2$year), FUN=mean)
+senti_province_year[senti_province_year$x == 0,]$x = NA
+library(reshape2)
+heatmap1 = dcast(senti_province_year, Group.1 ~ Group.2)
+row.names(heatmap1) = heatmap1$Group.1
+heatmap1 = heatmap1[,-1]
+library(pheatmap)
+graph3 = pheatmap (heatmap1,cluster_row = TRUE,cluster_cols = FALSE,cutree_rows	=4)
+```
+
+
+## Clean data of local features
+```{r}
+df2$divorce_mil = df2$divorce/df2$population*100
+df2$acci_mil = df2$traffic_accident/df2$population*100
+df2$lngdp = log(df2$gdp_per_capita)
+df2$lnpop = log(df2$population)
+
+library(lmtest)
+library(sandwich)
+library(stargazer)
+model3 = glm(label~ lngdp+hshsize+cpi+lnpop+senior_str+urbanization+bed_per_capita+divorce_mil+factor(year)+factor(party)+factor(media) ,data = df2, family = "binomial")
+model3_robust = coeftest(model3, vcov. = vcovHC(model3, type="HC0", cluster="media", adjust=T))
+model3_robust
+stargazer(model3_robust, type = "text",omit = c('year','media'))
+
+```
+
+
+
+## Placebo Analysis
+### Load the data
+```{r}
+df_p = read.csv('data_placebo.csv')
+df_p = df_p[,-11]
+df_p = df_p[,-10]
+df_p = df_p[,-9]
+df_p = df_p[,-2]
+colnames(df_p)[which(colnames(df_p)=='paper')] <- 'media'
+df1_p = merge(df_p,media,by = "media",all.x = TRUE)
+colnames(df1_p)[which(colnames(df1_p)=='provincecheck_en')] <- 'province'
+colnames(df1_p)[which(colnames(df1_p)=='year.x')] <- 'year'
+df2_p = merge(df1_p,feature,by = c("province","year"),all.x = TRUE)
+df2_p = merge(df2_p,fea_add,by = c("province","year"),all.x = TRUE)
+rm(df_p,df1_p)
+df2_p$divorce_mil = df2_p$divorce/df2_p$population*100
+df2_p$acci_mil = df2_p$traffic_accident/df2_p$population*100
+df2_p$lngdp = log(df2_p$gdp_per_capita)
+df2_p$lnpop = log(df2_p$population)
+```
+
+
+## Fit Logit Model for placebo set
+```{r}
+
+
+model1_p = glm(label~ factor(year)+factor(media),data = df2_p, family = "binomial")
+model1_p_robust = coeftest(model1_p, vcov. = vcovHC(model1_p, type="HC0", cluster="media", adjust=T))
+model1_p_robust
+
+coeff_model1 = c(model1_robust[2:17,1])
+ste_model1 =  c(model1_robust[2:17,2])
+year = seq(2004,2019,1)
+df_model1 = data.frame(year,coeff_model1,ste_model1)
+
+model2_p = glm(label~ factor(year)+factor(party)*factor(year)+factor(media) ,data = df2_p, family = "binomial")
+model2_p_robust = coeftest(model2_p, vcov. = vcovHC(model2_p, type="HC0", cluster="media", adjust=T))
+model2_p_robust
+
+coeff_p_model2 = c(model2_p_robust[200:215,1])
+ste_p_model2 =  c(model2_p_robust[200:215,2])
+df_p_model2 = data.frame(year,coeff_p_model2,ste_p_model2)
+
+graph4 = ggplot(df_p_model2) + aes(x = year,y = coeff_p_model2,ymin = coeff_p_model2 - 2.576*ste_p_model2, ymax = coeff_p_model2 + 2.576*ste_p_model2)+ geom_pointrange() + 
+  ylab("Coefficients of Interaction (with 99% Confidence Interval)") + 
+  xlab("Year") + 
+  scale_x_continuous(breaks=seq(2004,2019,1))+
+  geom_hline(aes(yintercept=0), colour="red") 
+
+
+model3_p = glm(label~  lngdp+hshsize+cpi+lnpop+senior_str+green_area+urbanization+hshsize+bed_per_capita+divorce_mil+acci_mil+factor(year)+factor(party)+factor(media) ,data = df2_p, family = "binomial")
+summary(model3_p)
+
+df2$placebo = 0
+df2_p$placebo = 1
+
+comb = rbind(df2,df2_p)
+comb$placebo = as.factor(comb$placebo)
+comb$inequality = 0
+comb[comb$placebo == 0,]$inequality = 1
+
+model4 = glm(label~  lngdp*inequality+hshsize*inequality+cpi*inequality+lnpop*inequality+senior_str*inequality+urbanization*inequality+bed_per_capita*inequality+divorce_mil*inequality+factor(year)+factor(party)+factor(media) ,data = comb, family = "binomial")
+model4_robust = coeftest(model4, vcov. = vcovHC(model4, type="HC0", cluster="media", adjust=T))
+stargazer(model4_robust, type = "text",omit = c('year','media'))
+summary(model4)
+
+```
+
+
+
+
+
+
+
+
+

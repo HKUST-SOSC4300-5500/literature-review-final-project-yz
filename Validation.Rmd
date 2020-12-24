@@ -1,0 +1,116 @@
+---
+title: "Validation_algorithm"
+---
+
+## Import Data
+```{r setup, include=FALSE}
+rm(list = ls())
+setwd('/Users/zhangyi/OneDrive - HKUST Connect/Courses/SOSC 5500/Final_Data/Validation')
+df = read.csv("validation1.csv")
+```
+
+## ROC curve
+
+```{r cars}
+library(pROC)
+roc1 = roc(response = df$label,predictor = df$probability_ernie)
+roc2 = roc(response = df$label,predictor = df$probability_bilstm)
+roc3 = roc(response = df$label,predictor = df$probability_bow)
+roc4 = roc(response = df$label,predictor = df$probability_cnn)
+roc5 = roc(response = df$label,predictor = df$probability_gru)
+roc6 = roc(response = df$label,predictor = df$probability_lstm)
+plot(roc1, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.1),
+      max.auc.polygon=TRUE,auc.polygon.col="coral3", print.thres=TRUE)
+plot(roc2, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.1),
+      max.auc.polygon=TRUE,auc.polygon.col="coral3", print.thres=TRUE)
+plot(roc3, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.1),
+      max.auc.polygon=TRUE,auc.polygon.col="coral3", print.thres=TRUE)
+plot(roc4, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.1),
+      max.auc.polygon=TRUE,auc.polygon.col="coral3", print.thres=TRUE)
+plot(roc5, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.1),
+      max.auc.polygon=TRUE,auc.polygon.col="coral3", print.thres=TRUE)
+plot(roc6, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.1),
+      max.auc.polygon=TRUE,auc.polygon.col="coral3", print.thres=TRUE)
+```
+Here, I choose ernie,cnn and gru to selection in the next step.
+
+## Predict y according to best threshold
+```{r pressure, echo=FALSE}
+df$label_ernie_best[df$probability_ernie>0.789] = 1
+df$label_ernie_best[df$probability_ernie<=0.789] = 0
+df$label_cnn_best[df$probability_cnn>0.204] = 1
+df$label_cnn_best[df$probability_cnn<=0.204] = 0
+df$label_gru_best[df$probability_gru>0.191] = 1
+df$label_gru_best[df$probability_gru<=0.191] = 0
+```
+
+## Function to compute accuracy
+```{r}
+# Sensitivity
+sensitivity <- function(ypred, y){
+  tab <- table(ypred, y)
+  return((tab[2,2])/(tab[1,2]+tab[2,2]))
+}
+# Specificity
+specificity <-function(ypred, y){
+  tab <- table(ypred, y)
+  return((tab[1,1])/(tab[1,1]+tab[2,1]))
+}
+
+#Accuracy
+accuracy <-function(ypred, y){
+  tab <- table(ypred, y)
+  return((tab[1,1]+tab[2,2])/(tab[1,1]+tab[1,2]+tab[2,1]+tab[2,2]))
+}
+```
+
+## Calculate Indicators
+```{r}
+# Initial ernie
+sensitivity(df$label_ernie,df$label)
+specificity(df$label_ernie,df$label)
+accuracy(df$label_ernie,df$label)
+
+# Initial bilstm
+sensitivity(df$label_bilstm,df$label)
+specificity(df$label_bilstm,df$label)
+accuracy(df$label_bilstm,df$label)
+
+# Initial bow
+sensitivity(df$label_bow,df$label)
+specificity(df$label_bow,df$label)
+accuracy(df$label_bow,df$label)
+
+# Initial cnn
+sensitivity(df$label_cnn,df$label)
+specificity(df$label_cnn,df$label)
+accuracy(df$label_cnn,df$label)
+
+#Initial gru
+sensitivity(df$label_gru,df$label)
+specificity(df$label_gru,df$label)
+accuracy(df$label_gru,df$label)
+
+#Initial lstm
+sensitivity(df$label_lstm,df$label)
+specificity(df$label_lstm,df$label)
+accuracy(df$label_lstm,df$label)
+
+#Ernie with best threshold
+sensitivity(df$label_ernie_best,df$label)
+specificity(df$label_ernie_best,df$label)
+accuracy(df$label_ernie_best,df$label)
+
+#Cnn with best threshold
+sensitivity(df$label_cnn_best,df$label)
+specificity(df$label_cnn_best,df$label)
+accuracy(df$label_cnn_best,df$label)
+
+#Gru with best threshold
+sensitivity(df$label_gru_best,df$label)
+specificity(df$label_gru_best,df$label)
+accuracy(df$label_gru_best,df$label)
+
+
+```
+
